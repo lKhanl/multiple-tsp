@@ -1,0 +1,6 @@
+*.txt
+*.iml
+*.jar
+*.class
+/.idea
+*.json
