@@ -70,12 +70,15 @@ public class Operations {
     }
 
     protected void swapNodesBetweenRoutes() {
-        int[] depotIndexes = generateRandomNumber(0, mTSP.DEPOT_NUMBERS, true);
-        int[] routeIndexes;
-        if (depotIndexes[0] == depotIndexes[1]) {
-            routeIndexes = generateRandomNumber(0, mTSP.ROUTE_NUMBERS, false);
-        } else
-            routeIndexes = generateRandomNumber(0, mTSP.ROUTE_NUMBERS, true);
+        int[] depotIndexes;
+        if (mTSP.DEPOT_NUMBERS == 1 && mTSP.ROUTE_NUMBERS > 1) {
+            depotIndexes = generateRandomNumber(0, mTSP.DEPOT_NUMBERS, false);
+        } else if (mTSP.DEPOT_NUMBERS > 1 && mTSP.ROUTE_NUMBERS == 1) {
+            depotIndexes = generateRandomNumber(0, mTSP.DEPOT_NUMBERS, false);
+        } else {
+            depotIndexes = generateRandomNumber(0, mTSP.DEPOT_NUMBERS, true);
+        }
+        int[] routeIndexes = generateRandomNumber(0, mTSP.ROUTE_NUMBERS, false);
         int[] nodeIndexes = new int[2];
         int n1 = 0;
         int n2 = 0;
@@ -201,5 +204,241 @@ public class Operations {
             arr[1] = (int) (Math.random() * (upperBound - lowerBound) + lowerBound);
         }
         return arr;
+    }
+
+    protected void updateTwoEdges() {
+
+        int depotIndex = (int) (Math.random() * mTSP.DEPOT_NUMBERS);
+        int routeIndex = (int) (Math.random() * mTSP.ROUTE_NUMBERS);
+        int counter = 0;
+
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : mTSP.solution.entrySet()) {
+
+            if (counter == depotIndex) {
+                if (entry.getValue()[routeIndex].size() > 2) {
+                    int[] numbers = generateRandomNumber(0, entry.getValue()[routeIndex].size(), false);
+
+                    if (Math.abs(numbers[0] - numbers[1]) == 1) {
+                        updateTwoEdges();
+                    } else if (Math.abs(numbers[0] - numbers[1]) == 2) {
+                        if (numbers[0] > numbers[1]) {
+                            Collections.swap(entry.getValue()[routeIndex], numbers[1] + 1, numbers[0]);
+                        } else {
+                            Collections.swap(entry.getValue()[routeIndex], numbers[0] + 1, numbers[1]);
+                        }
+
+                    } else {
+
+                        ArrayList<Integer> array = new ArrayList<>();
+                        if (numbers[0] > numbers[1]) {
+
+                            for (int i = numbers[1] + 1; i <= numbers[0]; i++) {
+                                array.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            int betweenNodeNumber = numbers[0] - numbers[1] + 1;
+
+                            while (betweenNodeNumber != 1) {
+                                entry.getValue()[routeIndex].remove(numbers[1] + 1);
+                                betweenNodeNumber--;
+                            }
+                            int count = array.size() - 1;
+
+
+                            for (int i = numbers[1] + 1; i <= numbers[0]; i++) {
+                                entry.getValue()[routeIndex].add(i, array.get(count));
+                                count--;
+                            }
+
+
+                        } else {
+
+                            ArrayList<Integer> array1 = new ArrayList<>();
+
+                            if (numbers[1] > numbers[0]) {
+
+                                for (int i = numbers[0] + 1; i <= numbers[1]; i++) {
+                                    array1.add(entry.getValue()[routeIndex].get(i));
+
+                                }
+                                int betweenNodeNumber = numbers[1] - numbers[0] + 1;
+
+                                while (betweenNodeNumber != 1) {
+                                    entry.getValue()[routeIndex].remove(numbers[0] + 1);
+                                    betweenNodeNumber--;
+                                }
+                                int count = array1.size() - 1;
+
+
+                                for (int i = numbers[0] + 1; i <= numbers[1]; i++) {
+                                    entry.getValue()[routeIndex].add(i, array1.get(count));
+                                    count--;
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+            counter++;
+        }
+        mTSP.cost = mTSP.calculateCost();
+    }
+
+    protected void updateThreeEdges() {
+
+        int depotIndex = (int) (Math.random() * mTSP.DEPOT_NUMBERS);
+        int routeIndex = (int) (Math.random() * mTSP.ROUTE_NUMBERS);
+        int counter = 0;
+
+        for (Map.Entry<Integer, ArrayList<Integer>[]> entry : mTSP.solution.entrySet()) {
+
+            if (counter == depotIndex) {
+                if (entry.getValue()[routeIndex].size() > 3) {
+                    int[] numbers = generateRandomNumber(0, entry.getValue()[routeIndex].size(), false); // size 3 olursa double benziyo
+                    int[] Numbers = new int[3];
+                    Numbers[0] = numbers[0];
+                    Numbers[1] = numbers[1];
+
+                    while (true) {
+
+                        Numbers[2] = (int) (Math.random() * entry.getValue()[routeIndex].size());
+                        if (Numbers[0] != Numbers[2] && Numbers[1] != Numbers[2]) {
+                            break;
+                        }
+                    }
+
+                    ArrayList<Integer> nums = new ArrayList<>();
+                    nums.add(0, Numbers[0]);
+                    nums.add(1, Numbers[1]);
+                    nums.add(2, Numbers[2]);
+
+                    Collections.sort(nums);
+
+                    if (nums.get(2) - nums.get(1) == 1 && nums.get(1) - nums.get(0) == 1) {
+                        updateThreeEdges();
+
+                    } else if (nums.get(2) - nums.get(1) > 1 && nums.get(1) - nums.get(0) > 1 ) {
+
+                        ArrayList<Integer> array = new ArrayList<>();
+                        int choose = (int)(Math.random() * 3);
+                        if (choose == 0) {
+
+                            for (int i = nums.get(1) + 1; i < nums.get(2) + 1; i++) {
+                                array.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            Collections.reverse(array);
+                            for (int i = nums.get(0) + 1; i < nums.get(1) + 1; i++) {
+                                array.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            for (int i = 0; i < nums.get(2) - nums.get(0); i++) {
+                                entry.getValue()[routeIndex].remove(nums.get(0) + 1);
+                            }
+
+                            int count = 1;
+                            for (int i = 0; i < array.size(); i++) {
+                                entry.getValue()[routeIndex].add(nums.get(0) + count, array.get(i));
+                                count++;
+                            }
+                        }
+
+                        if (choose == 1) {
+                            ArrayList<Integer> array1 = new ArrayList<>();
+                            for (int i = nums.get(1) + 1; i < nums.get(2) + 1; i++) {
+                                array1.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            for (int i = nums.get(0) + 1; i < nums.get(1) + 1; i++) {
+                                array1.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            for (int i = 0; i < nums.get(2) - nums.get(0); i++) {
+                                entry.getValue()[routeIndex].remove(nums.get(0) + 1);
+
+                            }
+
+                            int count = 0;
+                            for (int i = 0; i < array1.size(); i++) {
+                                entry.getValue()[routeIndex].add(nums.get(0) + count, array1.get(i));
+                                count++;
+
+                            }
+                        }
+                        if (choose == 2) {
+                            ArrayList<Integer> array2 = new ArrayList<>();
+                            for (int i = nums.get(0) + 1; i < nums.get(1) + 1; i++) {
+                                array2.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            Collections.reverse(array2);
+
+
+                            for (int i = nums.get(2); i > nums.get(1) ; i--) {
+                                array2.add(entry.getValue()[routeIndex].get(i));
+
+                            }
+                            for (int i = 0; i < nums.get(2) - nums.get(0); i++) {
+                                entry.getValue()[routeIndex].remove(nums.get(0) + 1);
+
+                            }
+
+                            int count = 1;
+                            for (int i = 0; i < array2.size(); i++) {
+                                entry.getValue()[routeIndex].add(nums.get(0) + count, array2.get(i));
+                                count++;
+
+                            }
+                        }
+                    }else if(nums.get(2) - nums.get(1) > 1 && nums.get(1) - nums.get(0) == 1){
+
+
+                        ArrayList<Integer> array = new ArrayList<>();
+
+                        for (int i = nums.get(1) + 1; i < nums.get(2) + 1; i++) {
+                            array.add(entry.getValue()[routeIndex].get(i));
+
+                        }
+
+                        array.add(entry.getValue()[routeIndex].get(nums.get(1)));
+
+
+                        for (int i = 0; i < nums.get(2) - nums.get(0); i++) {
+                            entry.getValue()[routeIndex].remove(nums.get(0) + 1);
+                        }
+
+                        int count = 1;
+                        for (int i = 0; i < array.size(); i++) {
+                            entry.getValue()[routeIndex].add(nums.get(0) + count, array.get(i));
+                            count++;
+                        }
+                    }
+
+                    else if(nums.get(2) - nums.get(1) ==1  && nums.get(1) - nums.get(0) > 1){
+                        ArrayList<Integer> array = new ArrayList<>();
+                        array.add(entry.getValue()[routeIndex].get(nums.get(2)));
+
+                        for (int i = nums.get(0) + 1; i < nums.get(1) + 1; i++) {
+                            array.add(entry.getValue()[routeIndex].get(i));
+
+                        }
+
+                        for (int i = 0; i < nums.get(2) - nums.get(0); i++) {
+                            entry.getValue()[routeIndex].remove(nums.get(0) + 1);
+                        }
+
+                        int count = 1;
+                        for (int i = 0; i < array.size(); i++) {
+                            entry.getValue()[routeIndex].add(nums.get(0) + count, array.get(i));
+                            count++;
+                        }
+                    }
+                }
+            }
+            counter++;
+        }
+        mTSP.cost = mTSP.calculateCost();
+
     }
 }

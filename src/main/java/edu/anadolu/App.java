@@ -5,13 +5,15 @@ import com.lexicalscope.jewel.cli.CliFactory;
 
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
-/**
- * Hello world!
- */
 @SuppressWarnings("ALL")
 public class App {
+    static boolean random;
+    static boolean isBalance;
+
     public static void main(String[] args) throws IOException {
 
         Params params;
@@ -21,60 +23,45 @@ public class App {
             System.out.println(e.getMessage());
             return;
         }
-//        System.out.println(TurkishNetwork.distance[28][3]);
-        if (params.getNN() != -1 && params.getR())
-            throw new RuntimeException("birinin seçilmesi lazım");
-
+        if (params.getNN() && params.getR())
+            throw new RuntimeException("You should select nearest neighborhood or random!");
+        random = params.getR();
+        isBalance = params.getBalance();
         mTSP best = null;
 
-        LinkedList<mTSP> solutions = new LinkedList<>();
+        int nn = params.firstNode() - 1;
 
-        int nn = params.getNN() - 1;
+        ConcurrentLinkedQueue<mTSP> solutions = new ConcurrentLinkedQueue<>();
 
-        if (nn != -2) {
+        long startTime = System.nanoTime();
+        if (params.getNN()) {
             mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
             if (nn <= 0 || nn >= 82)
-                throw new RuntimeException("yanlış aralık!");
+                throw new RuntimeException("Wrong interval!");
             mTSP.NNSolution(nn);
             best = mTSP;
 
         } else if (params.getR()) {
-            for (int i = 0; i < 100_000; i++) {
-                mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
-                mTSP.randomSolution();
-                final int cost = mTSP.cost();
-                solutions.add(mTSP);
-            }
+            IntStream.range(1, 100_000)
+                    .boxed()
+                    .parallel()
+                    .forEach(integer -> {
+                                mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
+                                mTSP.randomSolution();
+                                assert !mTSP.integrityTest() : new RuntimeException("integrityTest");
+                                assert !mTSP.routeSizeTest() : new RuntimeException("routeSizeTest");
+                                solutions.add(mTSP);
+                            }
+                    );
             best = solutions.stream().min(Comparator.comparingInt(mTSP::cost)).get();
         } else
-            throw new RuntimeException("u should select alg");
+            throw new RuntimeException("You should select nearest neighborhood or random!");
+
+        long estimatedTime = System.nanoTime() - startTime;
+        double convert = (double) estimatedTime / 1_000_000_000;
+        System.out.println("Finding best time --> " + convert + " seconds");
 
 
-        /** Finding best */
-        /*mTSP best = null;
-
-        LinkedList<mTSP> solutions = new LinkedList<>();
-
-
-        for (int i = 0; i < 100_000; i++) {
-
-            mTSP mTSP = new mTSP(params.getNumDepots(), params.getNumSalesmen());
-
-            int nn = params.getNN();
-            if (nn != -1) {
-                if (nn <= 0 || nn >= 82)
-                    throw new RuntimeException("yanlış aralıké");
-                mTSP.NNSolution(nn);
-            } else if (params.getR())
-                mTSP.randomSolution();
-            else
-                throw new RuntimeException("u should select alg");
-            final int cost = mTSP.cost();
-            solutions.add(mTSP);
-
-        }
-        best = solutions.stream().min(Comparator.comparingInt(mTSP::cost)).get();
-*/
         if (best != null) {
             best.print(params.getVerbose());
             System.out.println("**Total cost is " + best.cost());

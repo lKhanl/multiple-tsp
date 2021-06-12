@@ -16,11 +16,16 @@ public interface Params {
     @Option(helpRequest = true, description = "display help", shortName = "h")
     boolean getHelp();
 
-    @Option(description = "Nearest Neighborhood",shortName = "nn",longName = "nearestNeighborhood",defaultValue = "-1")
-    int getNN();
+    @Option(description = "Nearest Neighborhood",shortName = "nn",longName = "nearestNeighborhood")
+    boolean getNN();
 
-    @Option(description = "asd",shortName = "r",longName = "random")
+    @Option(description = "First node of the output",shortName = "f",longName = "firstNode",defaultValue = "38")
+    int firstNode();
+
+    @Option(description = "random generator",shortName = "r",longName = "random")
     boolean getR();
 
+    @Option(description = "exactly balanced",shortName = "b",longName = "balance")
+    boolean getBalance();
 
 }
